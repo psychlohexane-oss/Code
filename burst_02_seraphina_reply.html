@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INCOMING BIOMETRIC COURIER // LBS-CASTIGATION-001</title>
+<style>
+  :root {
+    --phosphor-green: #39ff14;
+    --phosphor-dim: #1d8a09;
+    --phosphor-crimson: #ff2a2a;
+    --bg-dark: #040804;
+    --border-color: #1f5416;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: #010301;
+    color: var(--phosphor-green);
+    font-family: 'Courier New', Courier, monospace;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+    overflow-x: hidden;
+  }
+
+  .crt-frame {
+    position: relative;
+    width: 100%;
+    max-width: 880px;
+    background-color: var(--bg-dark);
+    border: 3px solid #243b24;
+    border-radius: 14px;
+    box-shadow: 0 0 40px rgba(57, 255, 20, 0.14), inset 0 0 60px rgba(0, 0, 0, 0.92);
+    padding: 24px;
+    overflow: hidden;
+  }
+
+  .crt-frame::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+    z-index: 10;
+    background-size: 100% 3px, 6px 100%;
+    pointer-events: none;
+  }
+
+  .top-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 12px;
+    margin-bottom: 18px;
+    gap: 10px;
+    position: relative;
+    z-index: 20;
+  }
+
+  .sys-title {
+    font-size: 0.9rem;
+    letter-spacing: 1.5px;
+    color: var(--phosphor-green);
+    text-shadow: 0 0 6px rgba(57, 255, 20, 0.5);
+    font-weight: bold;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  button {
+    background: #0a140a;
+    color: var(--phosphor-green);
+    border: 1px solid var(--phosphor-green);
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.78rem;
+    padding: 6px 10px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.15s ease;
+  }
+
+  button:hover {
+    background: var(--phosphor-green);
+    color: #010301;
+    box-shadow: 0 0 10px var(--phosphor-green);
+  }
+
+  .terminal-output {
+    min-height: 380px;
+    line-height: 1.6;
+    font-size: 0.95rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    text-shadow: 0 0 4px rgba(57, 255, 20, 0.45);
+    position: relative;
+    z-index: 5;
+  }
+
+  .block-boot {
+    color: var(--phosphor-dim);
+    margin-bottom: 16px;
+  }
+
+  .block-seraphina {
+    border-left: 3px solid var(--phosphor-green);
+    background: rgba(57, 255, 20, 0.05);
+    padding: 16px 18px;
+    color: var(--phosphor-green);
+  }
+
+  .seal-banner {
+    margin-top: 14px;
+    padding: 8px 10px;
+    border: 1px dashed var(--phosphor-green);
+    background: rgba(57, 255, 20, 0.09);
+    font-weight: bold;
+    letter-spacing: 1px;
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 9px;
+    height: 1.1em;
+    background-color: currentColor;
+    vertical-align: text-bottom;
+    animation: blink 0.8s step-end infinite;
+  }
+
+  @keyframes blink {
+    50% { opacity: 0; }
+  }
+
+  .audio-notice {
+    font-size: 0.75rem;
+    color: var(--phosphor-dim);
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="crt-frame">
+  <div class="top-bar">
+    <div class="sys-title">++ NULL-CIPHER RECEIVER // BURST 02: RETURN DISPATCH ++</div>
+    <div class="controls">
+      <button id="soundToggleBtn">[SOUND: ON]</button>
+      <button id="replayBtn">[REPLAY BURST]</button>
+      <button id="skipBtn">[SKIP TO END]</button>
+      <button id="downloadBtn">[DOWNLOAD .HTML]</button>
+    </div>
+  </div>
+  <div id="audioHint" class="audio-notice">[AUDIO BUS ARMED — CLICK ANYWHERE IF BROWSER HOLDS INITIAL AUDIO LOCK]</div>
+  <div id="terminal" class="terminal-output"></div>
+</div>
+
+<script>
+  let soundEnabled = true;
+  let audioCtx = null;
+  let isCancelled = false;
+  let currentRunId = 0;
+
+  const terminalEl = document.getElementById('terminal');
+  const soundBtn = document.getElementById('soundToggleBtn');
+  const replayBtn = document.getElementById('replayBtn');
+  const skipBtn = document.getElementById('skipBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const audioHint = document.getElementById('audioHint');
+
+  function ensureAudioContext() {
+    if (!audioCtx) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
+        audioCtx = new AudioContextClass();
+      }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().then(() => {
+        if (audioCtx.state === 'running' && audioHint) {
+          audioHint.style.display = 'none';
+        }
+      }).catch(() => {});
+    } else if (audioCtx && audioCtx.state === 'running' && audioHint) {
+      audioHint.style.display = 'none';
+    }
+  }
+
+  ['click', 'keydown', 'pointerdown', 'touchstart'].forEach(evt => {
+    window.addEventListener(evt, () => {
+      if (soundEnabled) ensureAudioContext();
+    }, { passive: true });
+  });
+
+  function playKeyTick(freq = 740, duration = 0.018, gainVal = 0.03) {
+    if (!soundEnabled) return;
+    ensureAudioContext();
+    if (!audioCtx || audioCtx.state !== 'running') return;
+
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(freq + (Math.random() * 80 - 40), now);
+
+    gain.gain.setValueAtTime(gainVal, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + duration);
+  }
+
+  function playChime(freqs = [660, 880], step = 0.09) {
+    if (!soundEnabled) return;
+    ensureAudioContext();
+    if (!audioCtx || audioCtx.state !== 'running') return;
+
+    freqs.forEach((f, idx) => {
+      const start = audioCtx.currentTime + idx * step;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(f, start);
+      gain.gain.setValueAtTime(0.04, start);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.14);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(start);
+      osc.stop(start + 0.15);
+    });
+  }
+
+  soundBtn.addEventListener('click', () => {
+    soundEnabled = !soundEnabled;
+    soundBtn.textContent = soundEnabled ? '[SOUND: ON]' : '[SOUND: OFF]';
+    if (soundEnabled) {
+      ensureAudioContext();
+      playChime([520, 780], 0.06);
+    } else if (audioHint) {
+      audioHint.style.display = 'none';
+    }
+  });
+
+  const sections = [
+    {
+      className: 'block-boot',
+      speed: 10,
+      chime: [440, 660, 880],
+      text: `ALERT: UNSCHEDULED COURIER-BURST DETECTED ON PRIVATE ROSETTE CHANNEL
+BYPASSING ASTROPATHIC CHOIR RELAY...
+VERIFYING BIOMETRIC & PHEROMONAL LOCK... MATCH CONFIRMED
+------------------------------------------------------------------------`
+    },
+    {
+      className: 'block-seraphina',
+      speed: 18,
+      chime: [660, 880, 990],
+      text: `RETURN TRANSMISSION // SEALED DATA-SLATE COURIER
+REF: LBS-CASTIGATION-001
+TO: Inquisitor Davris Venria
+FROM: Oblivion Knight-Centura Seraphina, Sisterhood of Silence (Castigation Contingent)
+ENCRYPTION: Null-Cipher / Biometric Lock
+
+[BIOMETRIC HANDSHAKE: GENE-HELIX & OZONE-IRON PHEROMONAL SIGNATURE VERIFIED]
+[NO ADMINISTRATUM HEADER // NO ASTROPATHIC SEAL DETECTED]
+
+DESIGNATION: Intake #4419-K (Castigation Tithe).
+STATUS: Transferred to Scholastica Psykana, Terra. Interlocutor track.
+NAME: Ilsabet Krane.
+
+// ENDS //`,
+      seal: `[VERIFIED BIOMETRIC IMPRINT: GENE-HELIX & PHEROMONAL SEAL — SERAPHINA, OBLIVION KNIGHT-CENTURA]`
+    }
+  ];
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  function renderFullInstant() {
+    terminalEl.innerHTML = '';
+    sections.forEach(sec => {
+      const div = document.createElement('div');
+      div.className = sec.className;
+      div.textContent = sec.text;
+      if (sec.seal) {
+        const sealDiv = document.createElement('div');
+        sealDiv.className = 'seal-banner';
+        sealDiv.textContent = sec.seal;
+        div.appendChild(sealDiv);
+      }
+      terminalEl.appendChild(div);
+    });
+    const endCursor = document.createElement('span');
+    endCursor.className = 'cursor';
+    terminalEl.lastElementChild.appendChild(endCursor);
+  }
+
+  async function runSequence() {
+    const runId = ++currentRunId;
+    isCancelled = false;
+    terminalEl.innerHTML = '';
+    ensureAudioContext();
+
+    for (let s = 0; s < sections.length; s++) {
+      if (isCancelled || runId !== currentRunId) return;
+      const sec = sections[s];
+      playChime(sec.chime, 0.08);
+
+      const container = document.createElement('div');
+      container.className = sec.className;
+      const textNode = document.createTextNode('');
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor';
+
+      container.appendChild(textNode);
+      container.appendChild(cursor);
+      terminalEl.appendChild(container);
+
+      for (let i = 0; i < sec.text.length; i++) {
+        if (isCancelled || runId !== currentRunId) return;
+        const ch = sec.text[i];
+        textNode.nodeValue += ch;
+        if (ch !== ' ' && ch !== '\n' && i % 2 === 0) {
+          playKeyTick(740);
+        }
+        await sleep(ch === '\n' ? sec.speed * 4 : sec.speed);
+      }
+
+      if (sec.seal) {
+        await sleep(250);
+        if (isCancelled || runId !== currentRunId) return;
+        playChime([880, 1100], 0.07);
+        const sealDiv = document.createElement('div');
+        sealDiv.className = 'seal-banner';
+        sealDiv.textContent = sec.seal;
+        container.insertBefore(sealDiv, cursor);
+      }
+
+      if (s < sections.length - 1) {
+        cursor.remove();
+        await sleep(400);
+      }
+    }
+  }
+
+  replayBtn.addEventListener('click', () => {
+    ensureAudioContext();
+    runSequence();
+  });
+
+  skipBtn.addEventListener('click', () => {
+    isCancelled = true;
+    currentRunId++;
+    ensureAudioContext();
+    renderFullInstant();
+  });
+
+  downloadBtn.addEventListener('click', () => {
+    const htmlSource = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+    const blob = new Blob([htmlSource], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'burst_02_seraphina_reply.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  window.addEventListener('DOMContentLoaded', () => {
+    ensureAudioContext();
+    runSequence();
+  });
+</script>
+</body>
+</html>
